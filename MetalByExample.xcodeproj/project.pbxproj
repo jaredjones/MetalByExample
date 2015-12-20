@@ -13,6 +13,7 @@
 		7F157BCA1C2621C300FCE47D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7F157BC91C2621C300FCE47D /* Assets.xcassets */; };
 		7F157BCD1C2621C300FCE47D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7F157BCB1C2621C300FCE47D /* LaunchScreen.storyboard */; };
 		7F157BD51C26229D00FCE47D /* MBEMetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F157BD41C26229D00FCE47D /* MBEMetalView.swift */; };
+		7F157BD71C263B6F00FCE47D /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 7F157BD61C263B6F00FCE47D /* Shaders.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 		7F157BCC1C2621C300FCE47D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		7F157BCE1C2621C300FCE47D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7F157BD41C26229D00FCE47D /* MBEMetalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MBEMetalView.swift; sourceTree = "<group>"; };
+		7F157BD61C263B6F00FCE47D /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +65,7 @@
 				7F157BC91C2621C300FCE47D /* Assets.xcassets */,
 				7F157BCB1C2621C300FCE47D /* LaunchScreen.storyboard */,
 				7F157BCE1C2621C300FCE47D /* Info.plist */,
+				7F157BD61C263B6F00FCE47D /* Shaders.metal */,
 			);
 			path = MetalByExample;
 			sourceTree = "<group>";
@@ -138,6 +141,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7F157BD71C263B6F00FCE47D /* Shaders.metal in Sources */,
 				7F157BC51C2621C300FCE47D /* ViewController.swift in Sources */,
 				7F157BD51C26229D00FCE47D /* MBEMetalView.swift in Sources */,
 				7F157BC31C2621C300FCE47D /* AppDelegate.swift in Sources */,
