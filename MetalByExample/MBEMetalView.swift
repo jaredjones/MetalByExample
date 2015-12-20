@@ -9,6 +9,9 @@
 import UIKit
 import MetalKit
 
+typealias MBEIndex = UInt16
+let MBEIndexType:MTLIndexType = MTLIndexType.UInt16
+
 struct MBEVertex {
     var position:vector_float4
     var color:vector_float4
@@ -20,8 +23,10 @@ class MBEMetalView: UIView {
     private(set) var device:MTLDevice!
     
     var vertexBuffer:MTLBuffer?
+    var indexBuffer:MTLBuffer?
     var pipeline:MTLRenderPipelineState?
     var commandQueue:MTLCommandQueue?
+    var displayLink:CADisplayLink?
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -39,7 +44,18 @@ class MBEMetalView: UIView {
     }
     
     override func didMoveToWindow() {
-        self.redraw()
+        super.didMoveToWindow()
+    }
+    
+    override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        if (self.superview != nil) {
+            self.displayLink = CADisplayLink(target: self, selector: Selector("displayLinkDidFire:"))
+            self.displayLink?.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSRunLoopCommonModes)
+        }else {
+            self.displayLink?.invalidate()
+            self.displayLink = nil
+        }
     }
     
     func convertLayerToScreenScaling() {
@@ -63,13 +79,29 @@ class MBEMetalView: UIView {
     
     func makeBuffers() {
         let vertices:[MBEVertex] = [
-            MBEVertex(position: [0.0, 0.5, 0.0, 1.0], color: [1.0, 0.0, 0.0, 1.0]),
-            MBEVertex(position: [-0.5, -0.5, 0.0, 1.0], color: [0.0, 1.0, 0.0, 1.0]),
-            MBEVertex(position: [0.5, -0.5, 0.0, 1.0], color: [0.0, 0.0, 1.0, 1.0])
+            MBEVertex(position: [-1,  1,  1, 1], color: [0, 1, 1, 1]),
+            MBEVertex(position: [-1, -1,  1, 1], color: [0, 0, 1, 1]),
+            MBEVertex(position: [ 1, -1,  1, 1], color: [1, 0, 1, 1]),
+            MBEVertex(position: [ 1,  1,  1, 1], color: [1, 1, 1, 1]),
+            MBEVertex(position: [-1,  1, -1, 1], color: [0, 1, 0, 1]),
+            MBEVertex(position: [-1, -1, -1, 1], color: [0, 0, 0, 1]),
+            MBEVertex(position: [ 1, -1, -1, 1], color: [1, 0, 0, 1]),
+            MBEVertex(position: [ 1,  1, -1, 1], color: [1, 1, 0, 1])
+        ]
+        
+        let indicies: [MBEIndex] = [
+            3,2,6,6,7,3,
+            4,5,1,1,0,4,
+            4,0,3,3,7,4,
+            1,5,6,6,2,1,
+            0,1,2,2,3,0,
+            7,6,5,5,4,7
         ]
         
         let vertexSize = vertices.count * sizeofValue(vertices[0])
-        self.vertexBuffer = self.device.newBufferWithBytes(vertices, length: vertexSize, options: MTLResourceOptions.CPUCacheModeDefaultCache)
+        let indexSize = indicies.count * sizeofValue(indicies[0])
+        self.vertexBuffer = self.device.newBufferWithBytes(vertices, length: vertexSize, options: .CPUCacheModeDefaultCache)
+        self.indexBuffer = self.device.newBufferWithBytes(indicies, length: indexSize, options: .CPUCacheModeDefaultCache)
     }
     
     func makePipeline() {
@@ -78,7 +110,7 @@ class MBEMetalView: UIView {
         let fragmentFunc = library?.newFunctionWithName("fragment_main")
         
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        pipelineDescriptor.colorAttachments[0].pixelFormat = .BGRA8Unorm
+        pipelineDescriptor.colorAttachments[0].pixelFormat = self.metalLayer.pixelFormat
         pipelineDescriptor.vertexFunction = vertexFunc
         pipelineDescriptor.fragmentFunction = fragmentFunc
         
@@ -95,6 +127,10 @@ class MBEMetalView: UIView {
         }
         
         self.commandQueue = self.device.newCommandQueue()
+    }
+    
+    func displayLinkDidFire(displayLink: CADisplayLink) {
+        self.redraw()
     }
     
     func redraw () {
@@ -130,8 +166,15 @@ class MBEMetalView: UIView {
         
         let commandEncoder = commandBuffer?.renderCommandEncoderWithDescriptor(passDescriptor)
         commandEncoder?.setRenderPipelineState(self.pipeline!)
-        commandEncoder?.setVertexBuffer(self.vertexBuffer, offset: 0, atIndex: 0)
-        commandEncoder?.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: 3)
+        commandEncoder?.setVertexBuffer(self.vertexBuffer, offset: 0, atIndex: 0) //Index 0 matches buffer(0) in Shader
+        
+        //commandEncoder?.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: 3)
+        commandEncoder?.drawIndexedPrimitives(.Triangle,
+            indexCount: (self.indexBuffer?.length)! / sizeof(MBEIndex),
+            indexType: MBEIndexType,
+            indexBuffer: self.indexBuffer!,
+            indexBufferOffset: 0)
+        
         commandEncoder?.endEncoding()
         
         // Presents a drawable object when the command buffer is executed.
