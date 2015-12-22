@@ -13,8 +13,12 @@ typealias MBEIndex = UInt16
 let MBEIndexType:MTLIndexType = MTLIndexType.UInt16
 
 struct MBEVertex {
-    var position:vector_float4
-    var color:vector_float4
+    var position:float4
+    var color:float4
+}
+
+struct MBEUniforms {
+    var MVP: matrix_float4x4
 }
 
 class MBEMetalView: UIView {
@@ -24,9 +28,13 @@ class MBEMetalView: UIView {
     
     var vertexBuffer:MTLBuffer?
     var indexBuffer:MTLBuffer?
+    var uniformBuffer:MTLBuffer?
     var pipeline:MTLRenderPipelineState?
+    var depthStencilState:MTLDepthStencilState?
     var commandQueue:MTLCommandQueue?
     var displayLink:CADisplayLink?
+    
+    var depthTexture:MTLTexture?
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -69,6 +77,7 @@ class MBEMetalView: UIView {
         drawableSize.height *= scale
         
         self.metalLayer.drawableSize = drawableSize
+        self.makeDepthTexture()
     }
     
     func makeDevice() {
@@ -102,6 +111,42 @@ class MBEMetalView: UIView {
         let indexSize = indicies.count * sizeofValue(indicies[0])
         self.vertexBuffer = self.device.newBufferWithBytes(vertices, length: vertexSize, options: .CPUCacheModeDefaultCache)
         self.indexBuffer = self.device.newBufferWithBytes(indicies, length: indexSize, options: .CPUCacheModeDefaultCache)
+        
+        var viewMatrix:matrix_float4x4
+        var projMatrix:matrix_float4x4
+        var modelMatrix:matrix_float4x4
+        
+        viewMatrix = Identity()
+        let cameraTranslation: float3 = [2,0.5,-7]
+        viewMatrix = Translation(cameraTranslation)
+        
+        print("\(viewMatrix)")
+        let near:Float = 0.1
+        let far:Float = 100.0
+        let aspect:Float = Float(self.metalLayer.drawableSize.width / self.metalLayer.drawableSize.height)
+        let fov:Float = Float((2 * M_PI) / 5)
+        projMatrix = PerspectiveProjection(aspect, fovy: fov, near: near, far: far)
+        
+        modelMatrix = Identity()
+        
+        
+        let MVP = matrix_multiply(projMatrix, matrix_multiply(viewMatrix, modelMatrix))
+        
+        let uniforms:[MBEUniforms] = [
+            MBEUniforms(MVP:  MVP)
+        ]
+        
+        self.uniformBuffer = self.device.newBufferWithBytes(uniforms, length: sizeofValue(uniforms[0]), options: .CPUCacheModeDefaultCache)
+    }
+    
+    func makeDepthTexture() {
+        let drawableSize: CGSize = self.metalLayer.drawableSize
+        let desc: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(
+            .Depth32Float,
+            width: Int(drawableSize.width),
+            height: Int(drawableSize.height),
+            mipmapped: false)
+        self.depthTexture = self.metalLayer.device?.newTextureWithDescriptor(desc)
     }
     
     func makePipeline() {
@@ -111,8 +156,15 @@ class MBEMetalView: UIView {
         
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
         pipelineDescriptor.colorAttachments[0].pixelFormat = self.metalLayer.pixelFormat
+        pipelineDescriptor.depthAttachmentPixelFormat = .Depth32Float
         pipelineDescriptor.vertexFunction = vertexFunc
         pipelineDescriptor.fragmentFunction = fragmentFunc
+        
+        let depthStencilDescriptor = MTLDepthStencilDescriptor()
+        depthStencilDescriptor.depthCompareFunction = .Less
+        depthStencilDescriptor.depthWriteEnabled = true
+        
+        self.depthStencilState = self.device.newDepthStencilStateWithDescriptor(depthStencilDescriptor)
         
         do {
             try self.pipeline = self.device.newRenderPipelineStateWithDescriptor(pipelineDescriptor)
@@ -152,6 +204,11 @@ class MBEMetalView: UIView {
         passDescriptor.colorAttachments[0].storeAction = .Store
         passDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(93.0/255.0, 161.0/255.0, 219.0/255.0, 1.0)
         
+        passDescriptor.depthAttachment.texture = self.depthTexture
+        passDescriptor.depthAttachment.clearDepth = 1.0
+        passDescriptor.depthAttachment.loadAction = .Clear
+        passDescriptor.depthAttachment.storeAction = .DontCare
+        
         // The CommandQueue is given to us by the device and holds a list of CommandBuffers.
         // Generally the CommandQueue exists for more than one frame
         
@@ -166,7 +223,12 @@ class MBEMetalView: UIView {
         
         let commandEncoder = commandBuffer?.renderCommandEncoderWithDescriptor(passDescriptor)
         commandEncoder?.setRenderPipelineState(self.pipeline!)
+        commandEncoder?.setDepthStencilState(self.depthStencilState!)
+        commandEncoder?.setFrontFacingWinding(.CounterClockwise)
+        commandEncoder?.setCullMode(.Back)
+        
         commandEncoder?.setVertexBuffer(self.vertexBuffer, offset: 0, atIndex: 0) //Index 0 matches buffer(0) in Shader
+        commandEncoder?.setVertexBuffer(self.uniformBuffer, offset: 0, atIndex: 1)
         
         //commandEncoder?.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: 3)
         commandEncoder?.drawIndexedPrimitives(.Triangle,

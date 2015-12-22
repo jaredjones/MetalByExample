@@ -14,6 +14,7 @@
 		7F157BCD1C2621C300FCE47D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7F157BCB1C2621C300FCE47D /* LaunchScreen.storyboard */; };
 		7F157BD51C26229D00FCE47D /* MBEMetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F157BD41C26229D00FCE47D /* MBEMetalView.swift */; };
 		7F157BD71C263B6F00FCE47D /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 7F157BD61C263B6F00FCE47D /* Shaders.metal */; };
+		7F89DA6C1C28123D00AD28B9 /* Transforms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F89DA6B1C28123D00AD28B9 /* Transforms.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		7F157BCE1C2621C300FCE47D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7F157BD41C26229D00FCE47D /* MBEMetalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MBEMetalView.swift; sourceTree = "<group>"; };
 		7F157BD61C263B6F00FCE47D /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		7F89DA6B1C28123D00AD28B9 /* Transforms.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Transforms.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +64,7 @@
 				7F157BC41C2621C300FCE47D /* ViewController.swift */,
 				7F157BC61C2621C300FCE47D /* Main.storyboard */,
 				7F157BD41C26229D00FCE47D /* MBEMetalView.swift */,
+				7F89DA6B1C28123D00AD28B9 /* Transforms.swift */,
 				7F157BC91C2621C300FCE47D /* Assets.xcassets */,
 				7F157BCB1C2621C300FCE47D /* LaunchScreen.storyboard */,
 				7F157BCE1C2621C300FCE47D /* Info.plist */,
@@ -141,6 +144,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7F89DA6C1C28123D00AD28B9 /* Transforms.swift in Sources */,
 				7F157BD71C263B6F00FCE47D /* Shaders.metal in Sources */,
 				7F157BC51C2621C300FCE47D /* ViewController.swift in Sources */,
 				7F157BD51C26229D00FCE47D /* MBEMetalView.swift in Sources */,
@@ -294,6 +298,7 @@
 				7F157BD31C2621C300FCE47D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
