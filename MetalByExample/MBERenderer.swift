@@ -122,13 +122,12 @@ class MBERenderer: MBEMetalViewDelegate {
         projMatrix = matrix_float4x4_perspective(aspect, fovy: fov, near: near, far: far)
         
         modelMatrix = matrix_float4x4_identity()
-        modelMatrix = matrix_multiply(modelMatrix, matrix_float4x4_rotation(float3(1, 0, 0), angle: Float(rotDeg)))
+        modelMatrix = matrix_multiply(modelMatrix, matrix_float4x4_rotation(float3(0, 1, 0), angle: Float(rotDeg)))
         
-        rotDeg += duration
+        rotDeg += duration * (M_PI / 2);
         
         let MVP = matrix_multiply(projMatrix, matrix_multiply(viewMatrix, modelMatrix))
         var uniforms: MBEUniforms = MBEUniforms(MVP: MVP)
-        
         let uniformBufferOffset = sizeof(MBEUniforms) * self.bufferIndex
         memcpy((uniformBuffer?.contents())! + uniformBufferOffset, &uniforms, sizeofValue(uniforms))
     }
@@ -180,8 +179,9 @@ class MBERenderer: MBEMetalViewDelegate {
         commandEncoder?.setFrontFacingWinding(.CounterClockwise)
         commandEncoder?.setCullMode(.Back)
         
+        let uniformBufferOffset = sizeof(MBEUniforms) * self.bufferIndex
         commandEncoder?.setVertexBuffer(self.vertexBuffer, offset: 0, atIndex: 0) //Index 0 matches buffer(0) in Shader
-        commandEncoder?.setVertexBuffer(self.uniformBuffer, offset: 0, atIndex: 1)
+        commandEncoder?.setVertexBuffer(self.uniformBuffer, offset: uniformBufferOffset, atIndex: 1)
         
         //commandEncoder?.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: 3)
         commandEncoder?.drawIndexedPrimitives(.Triangle,
