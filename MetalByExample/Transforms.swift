@@ -9,7 +9,7 @@
 import Foundation
 import MetalKit
 
-func Identity() -> matrix_float4x4 {
+func matrix_float4x4_identity() -> matrix_float4x4 {
     let X: float4 = [1,0,0,0]
     let Y: float4 = [0,1,0,0]
     let Z: float4 = [0,0,1,0]
@@ -18,7 +18,7 @@ func Identity() -> matrix_float4x4 {
     return mat
 }
 
-func Translation(t:float3) -> matrix_float4x4
+func matrix_float4x4_translation(t:float3) -> matrix_float4x4
 {
     let X: float4 = [1,0,0,0]
     let Y: float4 = [0,1,0,0]
@@ -27,7 +27,8 @@ func Translation(t:float3) -> matrix_float4x4
     let mat: matrix_float4x4 = matrix_float4x4(columns: (X,Y,Z,W))
     return mat
 }
-func PerspectiveProjection(aspect:Float, fovy:Float, near:Float, far:Float) -> matrix_float4x4 {
+
+func matrix_float4x4_perspective(aspect:Float, fovy:Float, near:Float, far:Float) -> matrix_float4x4 {
     let yScale:Float = 1 / tan(fovy * 0.5)
     let xScale:Float = yScale / aspect
     let zRange:Float = far - near
@@ -39,5 +40,47 @@ func PerspectiveProjection(aspect:Float, fovy:Float, near:Float, far:Float) -> m
     let R: float4 = [0,0,zScale, -1]
     let S: float4 = [0,0,wzScale,0]
     let mat: matrix_float4x4 = matrix_float4x4(columns: (P,Q,R,S))
+    return mat
+}
+
+func matrix_float4x4_scale(scale:Float) -> matrix_float4x4 {
+    let X: float4 = [scale,0,0,0]
+    let Y: float4 = [0,scale,0,0]
+    let Z: float4 = [0,0,scale,0]
+    let W: float4 = [0,0,0,1]
+    
+    let mat: matrix_float4x4 = matrix_float4x4(columns: (X,Y,Z,W))
+    return mat
+}
+
+func matrix_float4x4_rotation(axis: float3, angle:Float) -> matrix_float4x4 {
+    let c: Float = cos(angle)
+    let s: Float = sin(angle)
+    
+    var X: float4 = float4()
+    X.x = axis.x * axis.x + (1 - axis.x * axis.x) * c;
+    X.y = axis.x * axis.y * (1 - c) - axis.z * s;
+    X.z = axis.x * axis.z * (1 - c) + axis.y * s;
+    X.w = 0.0;
+    
+    var Y: float4 = float4()
+    Y.x = axis.x * axis.y * (1 - c) + axis.z * s;
+    Y.y = axis.y * axis.y + (1 - axis.y * axis.y) * c;
+    Y.z = axis.y * axis.z * (1 - c) - axis.x * s;
+    Y.w = 0.0;
+    
+    var Z: float4 = float4()
+    Z.x = axis.x * axis.z * (1 - c) - axis.y * s;
+    Z.y = axis.y * axis.z * (1 - c) + axis.x * s;
+    Z.z = axis.z * axis.z + (1 - axis.z * axis.z) * c;
+    Z.w = 0.0;
+    
+    var W: float4 = float4()
+    W.x = 0.0;
+    W.y = 0.0;
+    W.z = 0.0;
+    W.w = 1.0;
+    
+    let mat: matrix_float4x4 = matrix_float4x4(columns: (X,Y,Z,W))
     return mat
 }
