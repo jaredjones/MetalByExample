@@ -23,6 +23,9 @@ struct MBEUniforms {
 
 class MBERenderer: MBEMetalViewDelegate {
     
+    let kInFlightCommandBufferes = 3
+    let inflightSemaphore:dispatch_semaphore_t
+    
     var device: MTLDevice
     var commandQueue:MTLCommandQueue?
     var pipeline:MTLRenderPipelineState?
@@ -34,6 +37,7 @@ class MBERenderer: MBEMetalViewDelegate {
     
     init(device: MTLDevice) {
         self.device = device
+        inflightSemaphore = dispatch_semaphore_create(kInFlightCommandBufferes)
         makePipeline()
         makeBuffers()
     }
@@ -131,6 +135,8 @@ class MBERenderer: MBEMetalViewDelegate {
 
     
     func drawInView(view: MBEMetalView) {
+        dispatch_semaphore_wait(inflightSemaphore, DISPATCH_TIME_FOREVER)
+        
         updateUniforms(view, duration: view.frameDuration)
         
         // MTLTextures are containers for images, where each image is called a slice.
@@ -188,6 +194,11 @@ class MBERenderer: MBEMetalViewDelegate {
         
         // Presents a drawable object when the command buffer is executed.
         commandBuffer!.presentDrawable(drawable)
+        
+        commandBuffer!.addCompletedHandler { (buffer:MTLCommandBuffer) -> Void in
+            dispatch_semaphore_signal(self.inflightSemaphore)
+        }
+        
         // The CommandBuffer is executed by the GPU.
         commandBuffer!.commit()
     }
