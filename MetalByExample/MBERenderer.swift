@@ -23,8 +23,9 @@ struct MBEUniforms {
 
 class MBERenderer: MBEMetalViewDelegate {
     
-    let kInFlightCommandBufferes = 3
+    let kInFlightCommandBuffers = 3
     let inflightSemaphore:dispatch_semaphore_t
+    var bufferIndex = 0
     
     var device: MTLDevice
     var commandQueue:MTLCommandQueue?
@@ -37,7 +38,7 @@ class MBERenderer: MBEMetalViewDelegate {
     
     init(device: MTLDevice) {
         self.device = device
-        inflightSemaphore = dispatch_semaphore_create(kInFlightCommandBufferes)
+        inflightSemaphore = dispatch_semaphore_create(kInFlightCommandBuffers)
         makePipeline()
         makeBuffers()
     }
@@ -99,9 +100,10 @@ class MBERenderer: MBEMetalViewDelegate {
         let indexSize = indicies.count * sizeofValue(indicies[0])
         self.vertexBuffer = self.device.newBufferWithBytes(vertices, length: vertexSize, options: .CPUCacheModeDefaultCache)
         self.indexBuffer = self.device.newBufferWithBytes(indicies, length: indexSize, options: .CPUCacheModeDefaultCache)
+        self.uniformBuffer = self.device.newBufferWithLength(sizeof(MBEUniforms) * kInFlightCommandBuffers, options: .CPUCacheModeDefaultCache)
     }
     
-    var rotDeg: Float = 0.0
+    var rotDeg: Double = 0.0
     
     func updateUniforms(view: MBEMetalView, duration:NSTimeInterval) {
         var viewMatrix:matrix_float4x4
@@ -120,17 +122,15 @@ class MBERenderer: MBEMetalViewDelegate {
         projMatrix = matrix_float4x4_perspective(aspect, fovy: fov, near: near, far: far)
         
         modelMatrix = matrix_float4x4_identity()
-        modelMatrix = matrix_multiply(modelMatrix, matrix_float4x4_rotation(float3(0, 1, 0), angle: rotDeg))
+        modelMatrix = matrix_multiply(modelMatrix, matrix_float4x4_rotation(float3(1, 0, 0), angle: Float(rotDeg)))
         
-        rotDeg += 0.01
+        rotDeg += duration
         
         let MVP = matrix_multiply(projMatrix, matrix_multiply(viewMatrix, modelMatrix))
+        var uniforms: MBEUniforms = MBEUniforms(MVP: MVP)
         
-        let uniforms:[MBEUniforms] = [
-            MBEUniforms(MVP:  MVP)
-        ]
-        
-        self.uniformBuffer = self.device.newBufferWithBytes(uniforms, length: sizeofValue(uniforms[0]), options: .CPUCacheModeDefaultCache)
+        let uniformBufferOffset = sizeof(MBEUniforms) * self.bufferIndex
+        memcpy((uniformBuffer?.contents())! + uniformBufferOffset, &uniforms, sizeofValue(uniforms))
     }
 
     
@@ -196,6 +196,7 @@ class MBERenderer: MBEMetalViewDelegate {
         commandBuffer!.presentDrawable(drawable)
         
         commandBuffer!.addCompletedHandler { (buffer:MTLCommandBuffer) -> Void in
+            self.bufferIndex = (self.bufferIndex + 1) % self.kInFlightCommandBuffers
             dispatch_semaphore_signal(self.inflightSemaphore)
         }
         
